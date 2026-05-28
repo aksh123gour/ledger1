@@ -1,0 +1,1774 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#F5F3EF">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Ledger">
+<meta name="description" content="Private personal finance tracker">
+<title>Ledger</title>
+<link rel="manifest" href="./manifest.json">
+<link rel="icon" type="image/png" href="./icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #F5F3EF;
+  --bg2: #EDEAE4;
+  --bg3: #E4E0D9;
+  --surface: #FFFFFF;
+  --surface2: #FAF9F7;
+  --border: #E0DDD7;
+  --border2: #D0CCC4;
+  --text: #1A1814;
+  --text2: #5A5650;
+  --text3: #8A8680;
+  --accent: #2D5A3D;
+  --accent-light: #EBF2ED;
+  --accent2: #8B5A2B;
+  --accent2-light: #F5EDE3;
+  --red: #B94040;
+  --red-light: #F5E8E8;
+  --green: #2D7A4A;
+  --green-light: #E8F5ED;
+  --gold: #C4963A;
+  --gold-light: #FAF3E3;
+  --accent-managed: #5B6E7A;
+  --accent-managed-light: #E8EDF0;
+  --accent-managed-dark: #3A4A55;
+
+  --radius: 16px;
+  --radius-sm: 10px;
+  --radius-lg: 24px;
+  --shadow: 0 2px 16px rgba(26,24,20,0.08);
+  --shadow-md: 0 4px 24px rgba(26,24,20,0.12);
+  --nav-h: 72px;
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --font-display: 'DM Serif Display', serif;
+  --font-body: 'DM Sans', sans-serif;
+  --transition: 0.22s cubic-bezier(0.4,0,0.2,1);
+}
+[data-dark] {
+  --bg: #13120F;
+  --bg2: #1C1B17;
+  --bg3: #252420;
+  --surface: #1E1D19;
+  --surface2: #252420;
+  --border: #2E2C27;
+  --border2: #3A3830;
+  --text: #F0EDE8;
+  --text2: #A09C96;
+  --text3: #706C66;
+  --accent-light: #1A2D20;
+  --accent2-light: #2A1E10;
+  --red-light: #2A1515;
+  --green-light: #152A1E;
+  --gold-light: #2A2010;
+  --shadow: 0 2px 16px rgba(0,0,0,0.3);
+  --shadow-md: 0 4px 24px rgba(0,0,0,0.4);
+  --accent-managed-light: #1A2228;
+  --accent-managed-dark: #2A3A45;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden;overscroll-behavior:none}
+body{
+  font-family:var(--font-body);
+  background:var(--bg);
+  color:var(--text);
+  font-size:15px;
+  line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+  transition:background var(--transition),color var(--transition);
+}
+button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+input,select,textarea{font-family:inherit;color:inherit;background:none;border:none;outline:none}
+input::placeholder{color:var(--text3)}
+
+/* ── APP SHELL ── */
+#app{height:100vh;display:flex;flex-direction:column;overflow:hidden;position:relative}
+
+/* ── LOCK SCREEN ── */
+#lockscreen{
+  position:fixed;inset:0;z-index:1000;
+  background:var(--bg);
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  padding:40px 32px;
+  transition:opacity 0.3s,transform 0.3s;
+}
+#lockscreen.hidden{opacity:0;transform:scale(1.03);pointer-events:none}
+.lock-logo{font-family:var(--font-display);font-size:36px;color:var(--text);margin-bottom:8px;letter-spacing:-0.5px}
+.lock-sub{color:var(--text3);font-size:13px;margin-bottom:48px;font-weight:400}
+.pin-dots{
+  display:flex;
+  flex-direction:row;
+  justify-content:center;
+  align-items:center;
+  gap:16px;
+  margin-bottom:32px;
+  width:100%;
+}
+.pin-dot{width:14px;height:14px;border-radius:50%;border:2px solid var(--border2);background:transparent;transition:background 0.15s,border-color 0.15s}
+.pin-dot.filled{background:var(--accent);border-color:var(--accent)}
+.pin-dot.error{background:var(--red);border-color:var(--red)}
+.pin-label{color:var(--text2);font-size:14px;font-weight:500;margin-bottom:24px;min-height:20px;text-align:center}
+.numpad{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;width:100%;max-width:280px}
+.numpad-btn{
+  height:64px;border-radius:var(--radius);
+  background:var(--surface);border:1px solid var(--border);
+  font-size:20px;font-weight:500;color:var(--text);
+  display:flex;align-items:center;justify-content:center;
+  transition:background var(--transition),transform 0.1s;
+  box-shadow:var(--shadow);
+  user-select:none;
+}
+.numpad-btn:active{background:var(--bg3);transform:scale(0.96)}
+.numpad-btn.special{font-size:13px;color:var(--text2);font-weight:500}
+.numpad-btn.delete{font-size:18px;color:var(--text2)}
+.lock-hint{color:var(--text3);font-size:12px;margin-top:20px;text-align:center}
+.setup-steps{width:100%;max-width:320px}
+.setup-title{font-family:var(--font-display);font-size:24px;text-align:center;margin-bottom:8px}
+.setup-desc{color:var(--text2);font-size:13px;text-align:center;margin-bottom:32px}
+
+/* ── TABS ── */
+#main{flex:1;overflow:hidden;display:flex;flex-direction:column}
+.tabs-wrap{flex:1;overflow:hidden;position:relative}
+.tabs-slider{
+  display:flex;height:100%;
+  transition:transform 0.32s cubic-bezier(0.4,0,0.2,1);
+  will-change:transform;
+}
+.tab-page{
+  min-width:100%;height:100%;overflow-y:auto;overflow-x:hidden;
+  overscroll-behavior-y:contain;
+  scrollbar-width:none;
+  -webkit-overflow-scrolling:touch;
+}
+.tab-page::-webkit-scrollbar{display:none}
+
+/* ── BOTTOM NAV ── */
+.bottom-nav{
+  display:flex;background:var(--surface);
+  border-top:1px solid var(--border);
+  padding:0 8px;
+  padding-bottom:calc(var(--safe-bottom));
+  height:calc(var(--nav-h) + var(--safe-bottom));
+  position:relative;z-index:10;
+  box-shadow:0 -2px 12px rgba(26,24,20,0.06);
+}
+.nav-btn{
+  flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:4px;padding:8px 0;color:var(--text3);
+  transition:color var(--transition);
+  position:relative;
+}
+.nav-btn.active{color:var(--accent)}
+.nav-btn svg{width:22px;height:22px;transition:transform 0.2s}
+.nav-btn.active svg{transform:scale(1.1)}
+.nav-label{font-size:10px;font-weight:500;letter-spacing:0.3px;text-transform:uppercase}
+.nav-indicator{
+  position:absolute;top:6px;left:50%;transform:translateX(-50%);
+  width:20px;height:3px;border-radius:2px;background:var(--accent);
+  opacity:0;transition:opacity 0.2s;
+}
+.nav-btn.active .nav-indicator{opacity:1}
+
+/* ── SECTION HELPERS ── */
+.page-pad{padding:20px 16px;padding-bottom:24px}
+.section-title{font-size:11px;font-weight:600;color:var(--text3);letter-spacing:1px;text-transform:uppercase;margin-bottom:12px}
+.card{background:var(--surface);border-radius:var(--radius);border:1px solid var(--border);overflow:hidden}
+.divider{height:1px;background:var(--border);margin:0 -16px}
+
+/* ── HOME ── */
+.balance-card{
+  background:var(--surface);
+  border-radius:var(--radius-lg);
+  border:1px solid var(--border);
+  padding:24px 20px 20px;
+  margin-bottom:20px;
+  box-shadow:var(--shadow);
+  position:relative;overflow:hidden;
+}
+.balance-card::before{
+  content:'';position:absolute;top:-40px;right:-40px;
+  width:160px;height:160px;border-radius:50%;
+  background:var(--accent-light);opacity:0.6;
+}
+.balance-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;position:relative}
+.balance-label{font-size:12px;font-weight:500;color:var(--text3);letter-spacing:0.5px;text-transform:uppercase}
+.lock-btn{
+  width:32px;height:32px;border-radius:var(--radius-sm);
+  background:var(--bg2);border:1px solid var(--border);
+  display:flex;align-items:center;justify-content:center;
+  color:var(--text3);transition:background var(--transition);
+}
+.lock-btn:active{background:var(--bg3)}
+.main-balance{
+  font-family:var(--font-display);font-size:42px;color:var(--text);
+  letter-spacing:-1px;line-height:1.1;margin-bottom:20px;position:relative;
+  transition:filter 0.3s;
+}
+.main-balance.blurred,.balance-sub-val.blurred{filter:blur(8px);user-select:none}
+.balance-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;position:relative}
+.balance-sub{background:var(--bg2);border-radius:var(--radius-sm);padding:10px 12px}
+.balance-sub-label{font-size:10px;color:var(--text3);font-weight:500;letter-spacing:0.3px;text-transform:uppercase;margin-bottom:3px}
+.balance-sub-val{font-size:15px;font-weight:600;color:var(--text);transition:filter 0.3s}
+
+/* QUICK ACTIONS */
+.qa-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:24px}
+.qa-btn{
+  display:flex;flex-direction:column;align-items:center;gap:6px;
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius);padding:12px 6px;
+  transition:background var(--transition),transform 0.15s;
+}
+.qa-btn:active{background:var(--bg3);transform:scale(0.96)}
+.qa-icon{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center}
+.qa-icon.expense{background:var(--red-light);color:var(--red)}
+.qa-icon.income{background:var(--green-light);color:var(--green)}
+.qa-icon.savings{background:var(--gold-light);color:var(--gold)}
+.qa-icon.withdraw{background:var(--accent-light);color:var(--accent)}
+.qa-label{font-size:10px;font-weight:500;color:var(--text2);text-align:center;letter-spacing:0.2px}
+
+/* TRANSACTIONS LIST */
+.tx-item{
+  display:flex;align-items:center;gap:12px;
+  padding:14px 16px;background:var(--surface);
+  transition:background var(--transition);
+  position:relative;
+}
+.tx-item:active{background:var(--bg2)}
+.tx-item + .tx-item::before{content:'';position:absolute;top:0;left:52px;right:0;height:1px;background:var(--border)}
+.tx-icon{
+  width:40px;height:40px;border-radius:12px;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:18px;
+}
+.tx-info{flex:1;min-width:0}
+.tx-name{font-size:14px;font-weight:500;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tx-meta{font-size:12px;color:var(--text3);margin-top:1px}
+.tx-amount{font-size:15px;font-weight:600;flex-shrink:0}
+.tx-amount.income{color:var(--green)}
+.tx-amount.expense{color:var(--red)}
+.tx-amount.savings{color:var(--gold)}
+
+/* empty state */
+.empty{text-align:center;padding:48px 24px;color:var(--text3)}
+.empty-icon{font-size:40px;margin-bottom:12px;opacity:0.4}
+.empty-text{font-size:14px;font-weight:400}
+
+/* ── TRANSACTIONS PAGE ── */
+.filter-bar{display:flex;gap:8px;padding:16px 16px 0;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.filter-bar::-webkit-scrollbar{display:none}
+.filter-chip{
+  flex-shrink:0;padding:7px 14px;border-radius:20px;
+  font-size:13px;font-weight:500;
+  background:var(--surface);border:1px solid var(--border);color:var(--text2);
+  transition:all var(--transition);white-space:nowrap;
+}
+.filter-chip.active{background:var(--accent);border-color:var(--accent);color:#fff}
+
+/* ── SAVINGS ── */
+.savings-header-card{
+  background:linear-gradient(135deg,var(--accent) 0%,#1a3d28 100%);
+  border-radius:var(--radius-lg);padding:24px 20px;margin-bottom:20px;
+  color:#fff;
+}
+.savings-total-label{font-size:11px;font-weight:500;opacity:0.7;letter-spacing:0.5px;text-transform:uppercase;margin-bottom:4px}
+.savings-total-val{font-family:var(--font-display);font-size:38px;letter-spacing:-1px;line-height:1.1;margin-bottom:20px;transition:filter 0.3s}
+.savings-total-val.blurred{filter:blur(8px)}
+.savings-split{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.savings-split-card{background:rgba(255,255,255,0.12);border-radius:var(--radius-sm);padding:12px}
+.savings-split-label{font-size:10px;opacity:0.7;font-weight:500;letter-spacing:0.3px;text-transform:uppercase;margin-bottom:3px}
+.savings-split-val{font-size:17px;font-weight:600;transition:filter 0.3s}
+.savings-split-val.blurred{filter:blur(8px)}
+.savings-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:24px}
+.savings-action-btn{
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  padding:14px;border-radius:var(--radius);font-size:14px;font-weight:500;
+  border:1px solid var(--border);background:var(--surface);
+  transition:background var(--transition),transform 0.15s;
+}
+.savings-action-btn:active{transform:scale(0.97)}
+.savings-action-btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.savings-action-btn.secondary{color:var(--accent)}
+
+/* ── SETTINGS ── */
+.settings-section{margin-bottom:24px}
+.setting-item{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:16px;background:var(--surface);
+  transition:background var(--transition);
+}
+.setting-item:active{background:var(--bg2)}
+.setting-item + .setting-item{border-top:1px solid var(--border)}
+.setting-label{font-size:14px;font-weight:500;color:var(--text)}
+.setting-sub{font-size:12px;color:var(--text3);margin-top:1px}
+.setting-right{color:var(--text3);font-size:13px;display:flex;align-items:center;gap:8px}
+/* Toggle */
+.toggle{width:44px;height:26px;border-radius:13px;background:var(--bg3);border:1px solid var(--border2);position:relative;transition:background 0.2s;cursor:pointer;flex-shrink:0}
+.toggle.on{background:var(--accent);border-color:var(--accent)}
+.toggle::after{content:'';position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,0.2);transition:transform 0.2s}
+.toggle.on::after{transform:translateX(18px)}
+.setting-danger{color:var(--red) !important}
+
+/* ── MODAL ── */
+.modal-overlay{
+  position:fixed;inset:0;z-index:200;
+  background:rgba(26,24,20,0.4);backdrop-filter:blur(4px);
+  display:flex;align-items:flex-end;
+  opacity:0;pointer-events:none;transition:opacity 0.25s;
+}
+.modal-overlay.open{opacity:1;pointer-events:all}
+.modal-sheet{
+  width:100%;background:var(--surface);
+  border-radius:var(--radius-lg) var(--radius-lg) 0 0;
+  padding:0 16px calc(32px + var(--safe-bottom));
+  max-height:92vh;overflow-y:auto;
+  transform:translateY(100%);
+  transition:transform 0.32s cubic-bezier(0.4,0,0.2,1);
+  scrollbar-width:none;
+}
+.modal-sheet::-webkit-scrollbar{display:none}
+.modal-overlay.open .modal-sheet{transform:translateY(0)}
+.modal-handle{width:36px;height:4px;border-radius:2px;background:var(--border2);margin:12px auto 20px}
+.modal-title{font-family:var(--font-display);font-size:22px;color:var(--text);margin-bottom:20px;letter-spacing:-0.3px}
+.form-group{margin-bottom:16px}
+.form-label{font-size:12px;font-weight:600;color:var(--text3);letter-spacing:0.5px;text-transform:uppercase;margin-bottom:8px}
+.form-input{
+  width:100%;padding:14px 16px;border-radius:var(--radius-sm);
+  background:var(--bg2);border:1.5px solid var(--border);
+  font-size:16px;font-weight:500;color:var(--text);
+  transition:border-color var(--transition);
+}
+.form-input:focus{border-color:var(--accent)}
+.form-input.amount-input{font-size:28px;font-family:var(--font-display);letter-spacing:-0.5px}
+.type-toggle{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:16px}
+.type-btn{
+  padding:12px;border-radius:var(--radius-sm);font-size:14px;font-weight:500;
+  background:var(--bg2);border:1.5px solid var(--border);color:var(--text2);
+  transition:all var(--transition);text-align:center;
+}
+.type-btn.active.expense{background:var(--red-light);border-color:var(--red);color:var(--red)}
+.type-btn.active.income{background:var(--green-light);border-color:var(--green);color:var(--green)}
+.source-toggle{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:16px}
+.source-btn{
+  padding:11px;border-radius:var(--radius-sm);font-size:14px;font-weight:500;
+  background:var(--bg2);border:1.5px solid var(--border);color:var(--text2);
+  transition:all var(--transition);text-align:center;
+}
+.source-btn.active{background:var(--accent-light);border-color:var(--accent);color:var(--accent)}
+.category-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px}
+.cat-btn{
+  display:flex;flex-direction:column;align-items:center;gap:4px;
+  padding:10px 4px;border-radius:var(--radius-sm);
+  background:var(--bg2);border:1.5px solid var(--border);
+  transition:all var(--transition);
+}
+.cat-btn.active{background:var(--accent-light);border-color:var(--accent)}
+.cat-btn-icon{font-size:20px}
+.cat-btn-label{font-size:10px;font-weight:500;color:var(--text2);text-align:center}
+.cat-btn.active .cat-btn-label{color:var(--accent)}
+.submit-btn{
+  width:100%;padding:16px;border-radius:var(--radius);
+  background:var(--accent);color:#fff;font-size:16px;font-weight:600;
+  letter-spacing:0.2px;transition:background var(--transition),transform 0.1s;
+  margin-top:4px;
+}
+.submit-btn:active{background:#1f4229;transform:scale(0.99)}
+.submit-btn:disabled{opacity:0.5;pointer-events:none}
+
+/* savings modal specifics */
+.savings-type-toggle{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:16px}
+.savings-type-btn{
+  padding:12px;border-radius:var(--radius-sm);font-size:14px;font-weight:500;
+  background:var(--bg2);border:1.5px solid var(--border);color:var(--text2);
+  transition:all var(--transition);text-align:center;
+}
+.savings-type-btn.active{background:var(--gold-light);border-color:var(--gold);color:var(--gold)}
+
+/* context actions */
+.ctx-actions{display:flex;gap:8px;padding:12px 16px;background:var(--surface);border-top:1px solid var(--border)}
+.ctx-btn{
+  flex:1;padding:12px;border-radius:var(--radius-sm);font-size:14px;font-weight:500;
+  border:1px solid var(--border);background:var(--bg2);color:var(--text2);
+  transition:all var(--transition);
+}
+.ctx-btn.danger{background:var(--red-light);border-color:var(--red);color:var(--red)}
+.ctx-btn:active{transform:scale(0.97)}
+
+/* toast */
+.toast{
+  position:fixed;top:calc(24px + env(safe-area-inset-top,0));left:50%;transform:translateX(-50%) translateY(-20px);
+  z-index:999;background:var(--text);color:var(--bg);
+  padding:10px 20px;border-radius:20px;font-size:13px;font-weight:500;
+  opacity:0;transition:opacity 0.2s,transform 0.2s;pointer-events:none;
+  white-space:nowrap;
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* animations */
+@keyframes slideUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pop{0%{transform:scale(0.95);opacity:0}100%{transform:scale(1);opacity:1}}
+.animate-up{animation:slideUp 0.3s ease forwards}
+
+/* currency symbol */
+.currency{font-size:0.55em;vertical-align:super;font-family:var(--font-body);font-weight:500;opacity:0.8;margin-right:2px}
+
+/* onboarding */
+.onboard-wrap{width:100%;max-width:320px;text-align:center}
+.onboard-icon{font-size:56px;margin-bottom:16px}
+.onboard-title{font-family:var(--font-display);font-size:28px;margin-bottom:8px;letter-spacing:-0.5px}
+.onboard-desc{color:var(--text2);font-size:14px;line-height:1.6;margin-bottom:32px}
+.onboard-btn{
+  width:100%;padding:16px;border-radius:var(--radius);
+  background:var(--accent);color:#fff;font-size:16px;font-weight:600;
+  margin-bottom:12px;transition:background var(--transition),transform 0.1s;
+}
+.onboard-btn:active{transform:scale(0.98)}
+
+/* Confirm dialog */
+.confirm-dialog{
+  position:fixed;inset:0;z-index:300;
+  background:rgba(26,24,20,0.5);backdrop-filter:blur(4px);
+  display:flex;align-items:center;justify-content:center;
+  padding:24px;
+  opacity:0;pointer-events:none;transition:opacity 0.2s;
+}
+.confirm-dialog.open{opacity:1;pointer-events:all}
+.confirm-box{
+  background:var(--surface);border-radius:var(--radius-lg);
+  padding:24px;width:100%;max-width:320px;
+  box-shadow:var(--shadow-md);
+  transform:scale(0.95);transition:transform 0.2s;
+}
+.confirm-dialog.open .confirm-box{transform:scale(1)}
+.confirm-title{font-size:17px;font-weight:600;margin-bottom:8px}
+.confirm-desc{font-size:14px;color:var(--text2);margin-bottom:20px;line-height:1.5}
+.confirm-btns{display:flex;gap:10px}
+.confirm-btn{flex:1;padding:13px;border-radius:var(--radius-sm);font-size:14px;font-weight:500;border:1px solid var(--border)}
+.confirm-btn.cancel{background:var(--bg2);color:var(--text2)}
+.confirm-btn.danger{background:var(--red);border-color:var(--red);color:#fff}
+
+/* currency select */
+.currency-select{
+  width:100%;padding:14px 16px;border-radius:var(--radius-sm);
+  background:var(--bg2);border:1.5px solid var(--border);
+  font-size:15px;color:var(--text);
+  appearance:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 12px center;
+  padding-right:40px;
+}
+
+/* swipe-to-delete hint */
+.tx-item-wrap{position:relative;overflow:hidden}
+.tx-delete-bg{
+  position:absolute;right:0;top:0;bottom:0;
+  width:80px;background:var(--red);
+  display:flex;align-items:center;justify-content:center;
+  color:#fff;font-size:12px;font-weight:500;
+  transform:translateX(80px);transition:transform 0.2s;
+}
+
+/* ── PROFILE TOGGLE ── */
+.profile-toggle{
+  display:flex;background:var(--bg2);border-radius:var(--radius-sm);padding:3px;gap:3px;margin-bottom:16px;border:1px solid var(--border);
+}
+.profile-btn{
+  flex:1;padding:8px 12px;border-radius:8px;font-size:13px;font-weight:600;color:var(--text3);background:transparent;border:none;transition:all var(--transition);text-align:center;cursor:pointer;
+}
+.profile-btn.active{
+  background:var(--surface);color:var(--accent);box-shadow:0 1px 4px rgba(0,0,0,0.06);
+}
+.profile-btn.managed-active{color:var(--accent-managed);}
+/* ── MANAGED PROFILE ACCENTS ── */
+.managed .balance-card::before{background:var(--accent-managed-light);opacity:0.6;}
+.managed .balance-label{color:var(--text3);}
+.managed .main-balance{color:var(--text);}
+.managed .savings-header-card{background:linear-gradient(135deg,var(--accent-managed) 0%,#3a2d1f 100%);}
+/* ── PROFILE BADGE ── */
+.profile-badge{
+  display:inline-block;padding:2px 8px;border-radius:6px;font-size:10px;font-weight:600;letter-spacing:0.3px;text-transform:uppercase;margin-left:6px;
+}
+.profile-badge.personal{background:var(--accent-light);color:var(--accent);}
+.profile-badge.managed{background:var(--accent-managed-light);color:var(--accent-managed);}
+</style>
+</head>
+<body>
+
+<div id="app">
+
+  <!-- LOCK SCREEN -->
+  <div id="lockscreen">
+    <!-- JS renders content here -->
+  </div>
+
+  <!-- MAIN APP -->
+  <div id="main" style="display:none">
+    <div class="tabs-wrap">
+      <div class="tabs-slider" id="tabsSlider">
+        <!-- Tab 0: Home -->
+        <div class="tab-page" id="pageHome"></div>
+        <!-- Tab 1: Transactions -->
+        <div class="tab-page" id="pageTxns"></div>
+        <!-- Tab 2: Savings -->
+        <div class="tab-page" id="pageSavings"></div>
+        <!-- Tab 3: Settings -->
+        <div class="tab-page" id="pageSettings"></div>
+      </div>
+    </div>
+
+    <nav class="bottom-nav">
+      <button class="nav-btn active" data-tab="0">
+        <div class="nav-indicator"></div>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+        <span class="nav-label">Home</span>
+      </button>
+      <button class="nav-btn" data-tab="1">
+        <div class="nav-indicator"></div>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+        <span class="nav-label">History</span>
+      </button>
+      <button class="nav-btn" data-tab="2">
+        <div class="nav-indicator"></div>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 12V22H4V12"/><path d="M22 7H2v5h20V7z"/><path d="M12 22V7"/><path d="M12 7H7.5a2.5 2.5 0 010-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 000-5C13 2 12 7 12 7z"/></svg>
+        <span class="nav-label">Savings</span>
+      </button>
+      <button class="nav-btn" data-tab="3">
+        <div class="nav-indicator"></div>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M6 20v-2a6 6 0 0112 0v2"/></svg>
+        <span class="nav-label">Settings</span>
+      </button>
+    </nav>
+  </div>
+</div>
+
+<!-- MODALS -->
+<div class="modal-overlay" id="txModal">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="txModalTitle">Add Transaction</div>
+    <div id="txForm"></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="savingsModal">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="savingsModalTitle">Add Savings</div>
+    <div id="savingsForm"></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="txDetailModal">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div id="txDetailContent"></div>
+    <div class="ctx-actions" id="txDetailActions"></div>
+  </div>
+</div>
+
+<!-- CONFIRM DIALOG -->
+<div class="confirm-dialog" id="confirmDialog">
+  <div class="confirm-box">
+    <div class="confirm-title" id="confirmTitle">Confirm</div>
+    <div class="confirm-desc" id="confirmDesc"></div>
+    <div class="confirm-btns">
+      <button class="confirm-btn cancel" id="confirmCancel">Cancel</button>
+      <button class="confirm-btn danger" id="confirmOk">Delete</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════════════════════
+// STATE & DB
+// ═══════════════════════════════════════════════════════
+const DB_NAME = 'ledger_db', DB_VER = 1;
+let db;
+let state = {
+  unlocked: false,
+  activeTab: 0,
+  balancesVisible: false,
+  filterType: 'all',
+  filterCat: 'all',
+  editTxId: null,
+  currentCurrency: '₹',
+  darkMode: false,
+  autoLock: false,
+  biometricEnabled: false,
+  pin: null,
+  setupStep: 0,
+  activeProfile: 'personal',
+};
+
+const CATS = [
+  {id:'food',label:'Food',icon:'🍜'},
+  {id:'shopping',label:'Shopping',icon:'🛍'},
+  {id:'transport',label:'Travel',icon:'🚌'},
+  {id:'bills',label:'Bills',icon:'⚡'},
+  {id:'health',label:'Health',icon:'💊'},
+  {id:'entertainment',label:'Fun',icon:'🎬'},
+  {id:'salary',label:'Salary',icon:'💼'},
+  {id:'other',label:'Other',icon:'📦'},
+];
+const CURRENCIES = [
+  {symbol:'₹',name:'INR – Indian Rupee'},
+  {symbol:'$',name:'USD – US Dollar'},
+  {symbol:'€',name:'EUR – Euro'},
+  {symbol:'£',name:'GBP – British Pound'},
+  {symbol:'¥',name:'JPY – Japanese Yen'},
+  {symbol:'₩',name:'KRW – South Korean Won'},
+  {symbol:'฿',name:'THB – Thai Baht'},
+  {symbol:'₫',name:'VND – Vietnamese Dong'},
+  {symbol:'د.إ',name:'AED – UAE Dirham'},
+];
+
+// localStorage helpers
+const LS = {
+  get:(k,d)=>{try{const v=localStorage.getItem(k);return v===null?d:JSON.parse(v)}catch{return d}},
+  set:(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch{}},
+};
+
+// Load settings
+function loadSettings(){
+  state.pin = LS.get('ledger_pin',null);
+  state.currentCurrency = LS.get('ledger_currency','₹');
+  state.darkMode = LS.get('ledger_dark',false);
+  state.autoLock = LS.get('ledger_autolock',false);
+  state.biometricEnabled = LS.get('ledger_biometric',false);
+  state.activeProfile = LS.get('ledger_profile','personal');
+  if(state.darkMode) document.documentElement.setAttribute('data-dark','');
+  updateProfileTheme();
+}
+
+
+function updateProfileTheme(){
+  const app = document.getElementById('app');
+  if(!app)return;
+  if(state.activeProfile==='managed') app.classList.add('managed');
+  else app.classList.remove('managed');
+}
+function setProfile(p){
+  state.activeProfile = p;
+  LS.set('ledger_profile',p);
+  updateProfileTheme();
+  renderPage(state.activeTab);
+}
+
+// IndexedDB
+function openDB(){
+  return new Promise((res,rej)=>{
+    const req = indexedDB.open(DB_NAME,DB_VER);
+    req.onupgradeneeded = e=>{
+      const d = e.target.result;
+      if(!d.objectStoreNames.contains('transactions')){
+        const s = d.createObjectStore('transactions',{keyPath:'id'});
+        s.createIndex('date','date');s.createIndex('type','type');s.createIndex('category','category');
+      }
+      if(!d.objectStoreNames.contains('savings')){
+        const s = d.createObjectStore('savings',{keyPath:'id'});
+        s.createIndex('date','date');
+      }
+      if(!d.objectStoreNames.contains('balances')){
+        d.createObjectStore('balances',{keyPath:'key'});
+      }
+    };
+    req.onsuccess = e=>{db=e.target.result;res(db)};
+    req.onerror = ()=>rej(req.error);
+  });
+}
+
+function dbGet(store,key){return new Promise((res,rej)=>{const tx=db.transaction(store,'readonly');const s=tx.objectStore(store);const r=s.get(key);r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)})}
+function dbPut(store,val){return new Promise((res,rej)=>{const tx=db.transaction(store,'readwrite');const s=tx.objectStore(store);const r=s.put(val);r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)})}
+function dbDelete(store,key){return new Promise((res,rej)=>{const tx=db.transaction(store,'readwrite');const s=tx.objectStore(store);const r=s.delete(key);r.onsuccess=()=>res();r.onerror=()=>rej(r.error)})}
+function dbGetAll(store){return new Promise((res,rej)=>{const tx=db.transaction(store,'readonly');const s=tx.objectStore(store);const r=s.getAll();r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)})}
+function dbClear(store){return new Promise((res,rej)=>{const tx=db.transaction(store,'readwrite');const s=tx.objectStore(store);const r=s.clear();r.onsuccess=()=>res();r.onerror=()=>rej(r.error)})}
+
+// Balances
+function getBalKeys(profile){
+  const p = profile || state.activeProfile;
+  return {
+    online: `bal_${p}_online`,
+    cash: `bal_${p}_cash`,
+    savings_online: `bal_${p}_savings_online`,
+    savings_cash: `bal_${p}_savings_cash`,
+  };
+};
+async function getBalances(profile){
+  const keys = getBalKeys(profile);
+  const vals = {};
+  for(const [k,dbk] of Object.entries(keys)){
+    const r = await dbGet('balances',dbk);
+    vals[k] = r?r.val:0;
+  }
+  return vals;
+}
+async function setBalance(key,val,profile){
+  const keys = getBalKeys(profile);
+  const dbk = keys[key];
+  if(!dbk)return;
+  await dbPut('balances',{key:dbk,val:Math.round(val*100)/100});
+}
+async function adjustBalance(key,delta,profile){
+  const bal = await getBalances(profile);
+  const newVal = (bal[key]||0) + delta;
+  await setBalance(key,newVal,profile);
+}
+
+// ═══════════════════════════════════════════════════════
+// FORMATTING
+// ═══════════════════════════════════════════════════════
+function fmt(n){
+  const abs = Math.abs(n);
+  if(abs>=10000000) return (n/10000000).toFixed(2)+'Cr';
+  if(abs>=100000) return (n/100000).toFixed(2)+'L';
+  return new Intl.NumberFormat('en-IN',{maximumFractionDigits:2,minimumFractionDigits:0}).format(n);
+}
+function fmtDate(iso){
+  const d=new Date(iso);
+  const now=new Date();
+  const diff=(now-d)/1000;
+  if(diff<60)return 'Just now';
+  if(diff<3600)return Math.floor(diff/60)+'m ago';
+  if(diff<86400)return Math.floor(diff/3600)+'h ago';
+  if(diff<172800)return 'Yesterday';
+  return d.toLocaleDateString('en-IN',{day:'numeric',month:'short'});
+}
+function fmtFull(iso){
+  const d=new Date(iso);
+  return d.toLocaleDateString('en-IN',{day:'numeric',month:'long',year:'numeric'})+', '+d.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
+}
+function catInfo(id){return CATS.find(c=>c.id===id)||CATS[CATS.length-1]}
+
+// ═══════════════════════════════════════════════════════
+// LOCK SCREEN
+// ═══════════════════════════════════════════════════════
+let pinBuffer = '';
+let lockState = 'checking'; // 'setup1','setup2','unlock'
+let setupPin1 = '';
+let confirmCallback = null;
+let changePinStep = 0;
+let changePinNew = '';
+
+function renderLockScreen(){
+  const ls = document.getElementById('lockscreen');
+  ls.innerHTML = '';
+  if(!state.pin){
+    renderSetup(ls);
+  } else {
+    renderUnlock(ls);
+  }
+}
+
+function renderSetup(container){
+  lockState = 'setup1';
+  pinBuffer='';setupPin1='';
+  container.innerHTML = `
+    <div class="setup-steps animate-up">
+      <div class="lock-logo">Ledger</div>
+      <div class="lock-sub">Your private finance journal</div>
+      <div class="setup-title">Create a PIN</div>
+      <div class="setup-desc">This PIN protects your financial data. It never leaves your device.</div>
+      <div class="pin-dots" id="pinDots">${'<div class="pin-dot"></div>'.repeat(4)}</div>
+      <div class="pin-label" id="pinLabel">Enter a 4-digit PIN</div>
+      ${renderNumpad()}
+    </div>`;
+  attachNumpad();
+}
+
+function renderUnlock(container){
+  lockState='unlock';pinBuffer='';
+  container.innerHTML=`
+    <div class="animate-up" style="text-align:center;width:100%;max-width:320px">
+      <div class="lock-logo">Ledger</div>
+      <div class="lock-sub">Enter PIN to continue</div>
+      <div style="margin-bottom:32px"></div>
+      <div class="pin-dots" id="pinDots">${'<div class="pin-dot"></div>'.repeat(4)}</div>
+      <div class="pin-label" id="pinLabel"> </div>
+      ${renderNumpad()}
+    </div>`;
+  attachNumpad();
+}
+
+function renderChangePinModal(container){
+  lockState='changepin';changePinStep=0;pinBuffer='';changePinNew='';
+  container.innerHTML=`
+    <div class="modal-handle"></div>
+    <div class="modal-title">Change PIN</div>
+    <div class="setup-steps">
+      <div class="pin-dots" id="cpinDots">${'<div class="pin-dot"></div>'.repeat(4)}</div>
+      <div class="pin-label" id="cpinLabel">Enter current PIN</div>
+      ${renderNumpad('cpin')}
+    </div>`;
+  attachNumpad('cpin');
+}
+
+function renderNumpad(prefix='pin'){
+  return `<div class="numpad" id="${prefix}Numpad">
+    ${[1,2,3,4,5,6,7,8,9].map(n=>`<button class="numpad-btn" data-n="${n}">${n}</button>`).join('')}
+    <button class="numpad-btn special" data-n="bio">⊙</button>
+    <button class="numpad-btn" data-n="0">0</button>
+    <button class="numpad-btn delete" data-n="del">⌫</button>
+  </div>`;
+}
+
+function attachNumpad(prefix='pin'){
+  const numpad=document.getElementById(prefix+'Numpad');
+  if(!numpad)return;
+  numpad.addEventListener('click',e=>{
+    const btn=e.target.closest('[data-n]');
+    if(!btn)return;
+    const n=btn.dataset.n;
+    if(n==='del'){
+      pinBuffer=pinBuffer.slice(0,-1);
+    } else if(n==='bio'){
+      tryBiometric();return;
+    } else if(pinBuffer.length<4){
+      pinBuffer+=n;
+    }
+    updatePinDots(prefix);
+    if(pinBuffer.length===4) setTimeout(()=>processPIN(prefix),120);
+  });
+}
+
+function updatePinDots(prefix='pin'){
+  const dots=document.querySelectorAll(`#${prefix}Dots .pin-dot`);
+  dots.forEach((d,i)=>{
+    d.classList.toggle('filled',i<pinBuffer.length);
+    d.classList.remove('error');
+  });
+}
+
+function processPIN(prefix='pin'){
+  if(lockState==='setup1'){
+    setupPin1=pinBuffer;pinBuffer='';
+    lockState='setup2';
+    const label=document.getElementById('pinLabel');
+    const setupTitle=document.querySelector('.setup-title');
+    if(setupTitle)setupTitle.textContent='Confirm PIN';
+    const desc=document.querySelector('.setup-desc');
+    if(desc)desc.textContent='Enter the same PIN again to confirm.';
+    if(label)label.textContent='Confirm your PIN';
+    updatePinDots('pin');
+    return;
+  }
+  if(lockState==='setup2'){
+    if(pinBuffer===setupPin1){
+      LS.set('ledger_pin',pinBuffer);state.pin=pinBuffer;
+      showToast('PIN set successfully');
+      enterApp();
+    } else {
+      pinBuffer='';setupPin1='';lockState='setup1';
+      const dots=document.querySelectorAll('#pinDots .pin-dot');
+      dots.forEach(d=>d.classList.add('error'));
+      const label=document.getElementById('pinLabel');
+      if(label)label.textContent='PINs did not match. Try again.';
+      const title=document.querySelector('.setup-title');
+      if(title)title.textContent='Create a PIN';
+      const desc=document.querySelector('.setup-desc');
+      if(desc)desc.textContent='This PIN protects your financial data.';
+      setTimeout(()=>{dots.forEach(d=>{d.classList.remove('error','filled')});updatePinDots('pin')},800);
+    }
+    return;
+  }
+  if(lockState==='unlock'){
+    if(pinBuffer===state.pin){
+      enterApp();
+    } else {
+      pinBuffer='';
+      const dots=document.querySelectorAll('#pinDots .pin-dot');
+      dots.forEach(d=>d.classList.add('error'));
+      const label=document.getElementById('pinLabel');
+      if(label)label.textContent='Incorrect PIN. Try again.';
+      setTimeout(()=>{dots.forEach(d=>{d.classList.remove('error','filled')})},800);
+    }
+    return;
+  }
+  if(lockState==='changepin'){
+    if(changePinStep===0){
+      if(pinBuffer===state.pin){
+        changePinStep=1;changePinNew='';pinBuffer='';
+        const label=document.getElementById('cpinLabel');
+        if(label)label.textContent='Enter new PIN';
+        updatePinDots('cpin');
+      } else {
+        pinBuffer='';
+        const dots=document.querySelectorAll('#cpinDots .pin-dot');
+        dots.forEach(d=>d.classList.add('error'));
+        const label=document.getElementById('cpinLabel');
+        if(label)label.textContent='Incorrect PIN';
+        setTimeout(()=>{dots.forEach(d=>{d.classList.remove('error','filled')})},800);
+      }
+    } else if(changePinStep===1){
+      changePinNew=pinBuffer;pinBuffer='';changePinStep=2;
+      const label=document.getElementById('cpinLabel');
+      if(label)label.textContent='Confirm new PIN';
+      updatePinDots('cpin');
+    } else if(changePinStep===2){
+      if(pinBuffer===changePinNew){
+        LS.set('ledger_pin',changePinNew);state.pin=changePinNew;
+        closeModal('txModal');
+        closeSavingsModal();
+        // close settings change PIN overlay
+        const cpOverlay=document.getElementById('changePinOverlay');
+        if(cpOverlay)cpOverlay.remove();
+        showToast('PIN changed');
+        renderSettings();
+      } else {
+        pinBuffer='';changePinStep=1;changePinNew='';
+        const dots=document.querySelectorAll('#cpinDots .pin-dot');
+        dots.forEach(d=>d.classList.add('error'));
+        const label=document.getElementById('cpinLabel');
+        if(label)label.textContent='PINs did not match';
+        setTimeout(()=>{dots.forEach(d=>{d.classList.remove('error','filled')})},800);
+      }
+    }
+    return;
+  }
+}
+
+async function tryBiometric(){
+  try{
+    if(!window.PublicKeyCredential||!state.biometricEnabled)return;
+    // Simple presence check via user verification
+    const av=await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
+    if(av){
+      // We use a challenge-based assertion
+      const cred = await navigator.credentials.get({publicKey:{
+        challenge:new Uint8Array(32),
+        rpId:location.hostname||'localhost',
+        userVerification:'required',
+        timeout:30000,
+      }}).catch(()=>null);
+      if(cred)enterApp();
+    }
+  }catch{}
+}
+
+function enterApp(){
+  const ls=document.getElementById('lockscreen');
+  ls.classList.add('hidden');
+  state.unlocked=true;
+  document.getElementById('main').style.display='flex';
+  setTimeout(()=>{ls.style.display='none'},350);
+  renderAll();
+  if(state.autoLock) setupAutoLock();
+}
+
+// ═══════════════════════════════════════════════════════
+// AUTO LOCK
+// ═══════════════════════════════════════════════════════
+let autoLockTimer=null;
+function setupAutoLock(){
+  clearAutoLock();
+  const reset=()=>{
+    clearTimeout(autoLockTimer);
+    autoLockTimer=setTimeout(lockApp,5*60*1000);
+  };
+  ['touchstart','click','keydown'].forEach(e=>document.addEventListener(e,reset,{passive:true}));
+  reset();
+}
+function clearAutoLock(){
+  if(autoLockTimer)clearTimeout(autoLockTimer);
+}
+function lockApp(){
+  clearAutoLock();
+  state.unlocked=false;
+  state.balancesVisible=false;
+  const ls=document.getElementById('lockscreen');
+  ls.style.display='flex';
+  ls.classList.remove('hidden');
+  document.getElementById('main').style.display='none';
+  renderLockScreen();
+}
+
+// ═══════════════════════════════════════════════════════
+// TABS & SWIPE
+// ═══════════════════════════════════════════════════════
+function setTab(i,animate=true){
+  state.activeTab=i;
+  const slider=document.getElementById('tabsSlider');
+  slider.style.transition=animate?'transform 0.32s cubic-bezier(0.4,0,0.2,1)':'none';
+  slider.style.transform=`translateX(-${i*100}%)`;
+  document.querySelectorAll('.nav-btn').forEach((b,j)=>b.classList.toggle('active',j===i));
+  renderPage(i);
+}
+
+// Swipe gesture
+(function(){
+  let startX=0,startY=0,dragging=false,dx=0,startTransform=0;
+  const slider=()=>document.getElementById('tabsSlider');
+  document.addEventListener('touchstart',e=>{
+    if(e.target.closest('.modal-overlay.open,.tab-page input,.tab-page select,.tab-page textarea'))return;
+    startX=e.touches[0].clientX;startY=e.touches[0].clientY;dragging=false;dx=0;
+    startTransform=state.activeTab*100;
+  },{passive:true});
+  document.addEventListener('touchmove',e=>{
+    if(!e.target.closest('.tabs-wrap'))return;
+    const cx=e.touches[0].clientX,cy=e.touches[0].clientY;
+    if(!dragging){
+      if(Math.abs(cx-startX)>Math.abs(cy-startY)&&Math.abs(cx-startX)>8){dragging=true;}
+      else return;
+    }
+    dx=cx-startX;
+    const pct=startTransform-(dx/window.innerWidth*100);
+    const clamped=Math.max(0,Math.min(300,pct));
+    const s=slider();
+    if(s){s.style.transition='none';s.style.transform=`translateX(-${clamped}%)`;}
+  },{passive:true});
+  document.addEventListener('touchend',()=>{
+    if(!dragging||!dx)return;
+    const threshold=window.innerWidth*0.3;
+    let next=state.activeTab;
+    if(dx<-threshold&&state.activeTab<3)next++;
+    else if(dx>threshold&&state.activeTab>0)next--;
+    setTab(next,true);
+    dragging=false;dx=0;
+  },{passive:true});
+})();
+
+// ═══════════════════════════════════════════════════════
+// RENDER HELPERS
+// ═══════════════════════════════════════════════════════
+function renderAll(){renderPage(state.activeTab)}
+function renderPage(i){
+  if(i===0)renderHome();
+  else if(i===1)renderTransactions();
+  else if(i===2)renderSavings();
+  else if(i===3)renderSettings();
+}
+
+// ═══════════════════════════════════════════════════════
+// HOME
+// ═══════════════════════════════════════════════════════
+async function renderHome(){
+  const page=document.getElementById('pageHome');
+  const isPersonal = state.activeProfile === 'personal';
+  const bal=await getBalances();
+  const total=(bal.online||0)+(bal.cash||0);
+  const totalSav=(bal.savings_online||0)+(bal.savings_cash||0);
+  const txns=await dbGetAll('transactions');
+  const recent=txns.filter(t=>t.profile===state.activeProfile).sort((a,b)=>new Date(b.date)-new Date(a.date)).slice(0,5);
+  const cur=state.currentCurrency;
+  const v=state.balancesVisible;
+
+  page.innerHTML=`<div class="page-pad">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <div>
+        <div style="font-size:12px;color:var(--text3);font-weight:500;letter-spacing:0.5px;text-transform:uppercase">Good ${greeting()}</div>
+        <div style="font-family:var(--font-display);font-size:22px;letter-spacing:-0.5px;margin-top:1px">Overview</div>
+      </div>
+      <div style="font-size:22px">${timeEmoji()}</div>
+    </div>
+
+    <div class="profile-toggle">
+      <button class="profile-btn ${isPersonal?'active':''}" onclick="setProfile('personal')">Personal</button>
+      <button class="profile-btn ${!isPersonal?'active managed-active':''}" onclick="setProfile('managed')">Managed</button>
+    </div>
+
+    <div class="balance-card">
+      <div class="balance-header">
+        <div class="balance-label">${isPersonal?'Personal':'Managed'} Balance</div>
+        <button class="lock-btn" id="balLockBtn" onclick="toggleBalances()">
+          ${v?lockOpenSvg():lockClosedSvg()}
+        </button>
+      </div>
+      <div class="main-balance ${v?'':'blurred'}">
+        <span class="currency">${cur}</span>${fmt(total)}
+      </div>
+      <div class="balance-grid">
+        <div class="balance-sub">
+          <div class="balance-sub-label">Online</div>
+          <div class="balance-sub-val ${v?'':'blurred'}">${cur}${fmt(bal.online||0)}</div>
+        </div>
+        <div class="balance-sub">
+          <div class="balance-sub-label">Cash</div>
+          <div class="balance-sub-val ${v?'':'blurred'}">${cur}${fmt(bal.cash||0)}</div>
+        </div>
+        ${isPersonal?`<div class="balance-sub">
+          <div class="balance-sub-label">Savings</div>
+          <div class="balance-sub-val ${v?'':'blurred'}">${cur}${fmt(totalSav)}</div>
+        </div>`:`<div class="balance-sub">
+          <div class="balance-sub-label">Pending</div>
+          <div class="balance-sub-val ${v?'':'blurred'}">${cur}${fmt(total)}</div>
+        </div>`}
+      </div>
+    </div>
+
+    <div class="section-title">Quick Actions</div>
+    <div class="qa-grid">
+      <button class="qa-btn" onclick="openTxModal('expense')">
+        <div class="qa-icon expense"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12l7 7 7-7"/></svg></div>
+        <div class="qa-label">Expense</div>
+      </button>
+      <button class="qa-btn" onclick="openTxModal('income')">
+        <div class="qa-icon income"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 19V5M5 12l7-7 7 7"/></svg></div>
+        <div class="qa-label">Income</div>
+      </button>
+      ${isPersonal?`
+      <button class="qa-btn" onclick="openSavingsModal('add')">
+        <div class="qa-icon savings"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 12V22H4V12"/><path d="M22 7H2v5h20V7z"/><path d="M12 22V7"/></svg></div>
+        <div class="qa-label">Save</div>
+      </button>
+      <button class="qa-btn" onclick="openSavingsModal('withdraw')">
+        <div class="qa-icon withdraw"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v8M8 12h8"/></svg></div>
+        <div class="qa-label">Withdraw</div>
+      </button>`:`
+      <button class="qa-btn" onclick="openTxModal('income')">
+        <div class="qa-icon income"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 19V5M5 12l7-7 7 7"/></svg></div>
+        <div class="qa-label">Income</div>
+      </button>
+      <button class="qa-btn" onclick="openTxModal('expense')">
+        <div class="qa-icon expense"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12l7 7 7-7"/></svg></div>
+        <div class="qa-label">Expense</div>
+      </button>`}
+    </div>
+
+    <div class="section-title">Recent Transactions</div>
+    <div class="card">
+      ${recent.length?recent.map(tx=>renderTxItem(tx)).join(''):`<div class="empty"><div class="empty-icon">📭</div><div class="empty-text">No transactions yet</div></div>`}
+    </div>
+    ${recent.length?`<button onclick="setTab(1)" style="width:100%;margin-top:10px;padding:12px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--surface);color:var(--text2);font-size:13px;font-weight:500">View all transactions →</button>`:''}
+  </div>`;
+}
+
+function lockClosedSvg(){return`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>`}
+function lockOpenSvg(){return`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 019.9-1"/></svg>`}
+function greeting(){const h=new Date().getHours();if(h<12)return'Morning';if(h<17)return'Afternoon';return'Evening'}
+function timeEmoji(){const h=new Date().getHours();if(h<6)return'🌙';if(h<12)return'☀️';if(h<17)return'🌤';return'🌙'}
+
+function toggleBalances(){
+  state.balancesVisible=!state.balancesVisible;
+  renderHome();
+}
+
+function renderTxItem(tx){
+  const cat=catInfo(tx.category);
+  const isSav=tx.isSavings;
+  const sign=tx.type==='income'?'+':'-';
+  const amtClass=isSav?'savings':tx.type;
+  const txProfile = tx.profile || 'personal';
+  const profileLabel = txProfile === 'managed' ? ' · M' : '';
+  return`<div class="tx-item" onclick="openTxDetail('${tx.id}')">
+    <div class="tx-icon" style="background:${isSav?'var(--gold-light)':tx.type==='income'?'var(--green-light)':'var(--red-light)'}">${cat.icon}</div>
+    <div class="tx-info">
+      <div class="tx-name">${tx.note||cat.label}</div>
+      <div class="tx-meta">${tx.source==='cash'?'💵 Cash':'💳 Online'}${profileLabel} · ${fmtDate(tx.date)}</div>
+    </div>
+    <div class="tx-amount ${amtClass}">${sign}${state.currentCurrency}${fmt(tx.amount)}</div>
+  </div>`;
+}
+
+// ═══════════════════════════════════════════════════════
+// TRANSACTIONS
+// ═══════════════════════════════════════════════════════
+async function renderTransactions(){
+  const page=document.getElementById('pageTxns');
+  const isPersonal = state.activeProfile === 'personal';
+  let txns=await dbGetAll('transactions');
+  txns = txns.filter(t=>t.profile===state.activeProfile);
+  txns.sort((a,b)=>new Date(b.date)-new Date(a.date));
+
+  if(state.filterType!=='all')txns=txns.filter(t=>t.type===state.filterType||(state.filterType==='savings'&&t.isSavings));
+  if(state.filterCat!=='all')txns=txns.filter(t=>t.category===state.filterCat);
+
+  const filters=['all','income','expense'];
+  if(isPersonal) filters.push('savings');
+  const catFilters=[{id:'all',icon:'',label:'All'},...CATS];
+
+  page.innerHTML=`<div style="padding-bottom:20px">
+    <div style="padding:20px 16px 12px;display:flex;align-items:center;justify-content:space-between">
+      <div style="font-family:var(--font-display);font-size:24px;letter-spacing:-0.5px">Transactions</div>
+      <button onclick="openTxModal('expense')" style="width:36px;height:36px;border-radius:10px;background:var(--accent);display:flex;align-items:center;justify-content:center;color:#fff;flex-shrink:0">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+      </button>
+    </div>
+    <div class="profile-toggle" style="margin:0 16px 12px">
+      <button class="profile-btn ${isPersonal?'active':''}" onclick="setProfile('personal');setTab(1)">Personal</button>
+      <button class="profile-btn ${!isPersonal?'active managed-active':''}" onclick="setProfile('managed');setTab(1)">Managed</button>
+    </div>
+    <div class="filter-bar">
+      ${filters.map(f=>`<button class="filter-chip ${state.filterType===f?'active':''}" onclick="setFilter('${f}')">${f.charAt(0).toUpperCase()+f.slice(1)}</button>`).join('')}
+      <div style="width:1px;background:var(--border);flex-shrink:0;margin:0 2px"></div>
+      ${catFilters.map(c=>`<button class="filter-chip ${state.filterCat===c.id?'active':''}" onclick="setCatFilter('${c.id}')">${c.icon} ${c.label}</button>`).join('')}
+    </div>
+    <div style="padding:16px 16px 0">
+      ${txns.length?`<div class="card">${txns.map(tx=>renderTxItem(tx)).join('')}</div>`:`<div class="empty" style="margin-top:32px"><div class="empty-icon">🔍</div><div class="empty-text">No transactions found</div></div>`}
+    </div>
+  </div>`;
+}
+
+function setFilter(f){state.filterType=f;renderTransactions()}
+function setCatFilter(f){state.filterCat=f;renderTransactions()}
+
+// ═══════════════════════════════════════════════════════
+// SAVINGS
+// ═══════════════════════════════════════════════════════
+async function renderSavings(){
+  const page=document.getElementById('pageSavings');
+  if(state.activeProfile!=='personal'){
+    page.innerHTML=`<div class="page-pad" style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;text-align:center">
+      <div style="font-size:48px;margin-bottom:16px;opacity:0.3">🏦</div>
+      <div style="font-family:var(--font-display);font-size:20px;margin-bottom:8px;color:var(--text)">Savings</div>
+      <div style="font-size:14px;color:var(--text3);max-width:260px;line-height:1.5">Savings are only available in your Personal profile. Switch to Personal to view and manage savings.</div>
+      <button onclick="setProfile('personal');renderSavings()" style="margin-top:24px;padding:12px 24px;border-radius:var(--radius);background:var(--accent);color:#fff;font-size:14px;font-weight:600;border:none">Switch to Personal</button>
+    </div>`;
+    return;
+  }
+  const bal=await getBalances('personal');
+  const total=(bal.savings_online||0)+(bal.savings_cash||0);
+  const v=state.balancesVisible;
+  const cur=state.currentCurrency;
+  const savTxns=(await dbGetAll('transactions')).filter(t=>t.isSavings&&t.profile==='personal').sort((a,b)=>new Date(b.date)-new Date(a.date));
+
+  page.innerHTML=`<div class="page-pad">
+    <div style="font-family:var(--font-display);font-size:24px;letter-spacing:-0.5px;margin-bottom:20px">Savings</div>
+
+    <div class="savings-header-card">
+      <div class="savings-total-label">Total Saved</div>
+      <div class="savings-total-val ${v?'':'blurred'}"><span style="font-size:0.55em;vertical-align:super;font-family:var(--font-body);opacity:0.8">${cur}</span>${fmt(total)}</div>
+      <div class="savings-split">
+        <div class="savings-split-card">
+          <div class="savings-split-label">Online</div>
+          <div class="savings-split-val ${v?'':'blurred'}">${cur}${fmt(bal.savings_online||0)}</div>
+        </div>
+        <div class="savings-split-card">
+          <div class="savings-split-label">Cash</div>
+          <div class="savings-split-val ${v?'':'blurred'}">${cur}${fmt(bal.savings_cash||0)}</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="savings-actions">
+      <button class="savings-action-btn primary" onclick="openSavingsModal('add')">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+        Add Savings
+      </button>
+      <button class="savings-action-btn secondary" onclick="openSavingsModal('withdraw')">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/></svg>
+        Withdraw
+      </button>
+    </div>
+
+    <div class="section-title">Savings History</div>
+    <div class="card">
+      ${savTxns.length?savTxns.map(tx=>renderTxItem(tx)).join(''):`<div class="empty"><div class="empty-icon">🏦</div><div class="empty-text">No savings activity yet</div></div>`}
+    </div>
+  </div>`;
+}
+
+// ═══════════════════════════════════════════════════════
+// SETTINGS
+// ═══════════════════════════════════════════════════════
+function renderSettings(){
+  const page=document.getElementById('pageSettings');
+  const cur=CURRENCIES.find(c=>c.symbol===state.currentCurrency)||CURRENCIES[0];
+  const isPersonal = state.activeProfile === 'personal';
+
+  page.innerHTML=`<div class="page-pad">
+    <div style="font-family:var(--font-display);font-size:24px;letter-spacing:-0.5px;margin-bottom:24px">Settings</div>
+
+    <div class="section-title">Profile</div>
+    <div class="card settings-section" style="margin-bottom:24px">
+      <div class="setting-item">
+        <div><div class="setting-label">Active Profile</div><div class="setting-sub">${isPersonal?'Personal — your own money':'Managed — money handled for others'}</div></div>
+        <div class="setting-right"><span class="profile-badge ${isPersonal?'personal':'managed'}">${isPersonal?'Personal':'Managed'}</span></div>
+      </div>
+      <div class="setting-item" onclick="setProfile('${isPersonal?'managed':'personal'}');renderSettings()">
+        <div><div class="setting-label">Switch Profile</div><div class="setting-sub">Toggle between Personal and Managed</div></div>
+        <div class="setting-right"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></div>
+      </div>
+    </div>
+
+    <div class="section-title">Security</div>
+    <div class="card settings-section" style="margin-bottom:24px">
+      <div class="setting-item" onclick="openChangePinOverlay()">
+        <div><div class="setting-label">Change PIN</div><div class="setting-sub">Update your lock PIN</div></div>
+        <div class="setting-right"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></div>
+      </div>
+      <div class="setting-item">
+        <div><div class="setting-label">Auto-lock</div><div class="setting-sub">Lock after 5 minutes of inactivity</div></div>
+        <div class="toggle ${state.autoLock?'on':''}" onclick="toggleAutoLock(this)"></div>
+      </div>
+    </div>
+
+    <div class="section-title">Appearance</div>
+    <div class="card settings-section" style="margin-bottom:24px">
+      <div class="setting-item">
+        <div><div class="setting-label">Dark Mode</div><div class="setting-sub">Switch to dark theme</div></div>
+        <div class="toggle ${state.darkMode?'on':''}" onclick="toggleDark(this)"></div>
+      </div>
+    </div>
+
+    <div class="section-title">Currency</div>
+    <div class="card settings-section" style="margin-bottom:24px">
+      <div class="setting-item">
+        <div style="flex:1;margin-right:12px"><div class="setting-label">Currency</div><div class="setting-sub">${cur.name}</div></div>
+        <select class="currency-select" style="width:auto;min-width:80px" onchange="setCurrency(this.value)">
+          ${CURRENCIES.map(c=>`<option value="${c.symbol}" ${c.symbol===state.currentCurrency?'selected':''}>${c.symbol}</option>`).join('')}
+        </select>
+      </div>
+    </div>
+
+    <div class="section-title">Data</div>
+    <div class="card settings-section" style="margin-bottom:24px">
+      <div class="setting-item" onclick="exportData('json')">
+        <div><div class="setting-label">Export as JSON</div><div class="setting-sub">Download all your data</div></div>
+        <div class="setting-right"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg></div>
+      </div>
+      <div class="setting-item" onclick="exportData('csv')">
+        <div><div class="setting-label">Export as CSV</div><div class="setting-sub">For spreadsheets</div></div>
+        <div class="setting-right"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg></div>
+      </div>
+      <div class="setting-item" onclick="confirmClearData()">
+        <div><div class="setting-label setting-danger">Clear All Data</div><div class="setting-sub">Permanently delete everything</div></div>
+        <div class="setting-right" style="color:var(--red)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></div>
+      </div>
+    </div>
+
+    <div style="text-align:center;color:var(--text3);font-size:12px;padding:8px 0 16px">
+      Ledger v1.0 · All data stored locally
+    </div>
+  </div>`;
+}
+
+function toggleDark(el){
+  state.darkMode=!state.darkMode;
+  el.classList.toggle('on',state.darkMode);
+  LS.set('ledger_dark',state.darkMode);
+  if(state.darkMode)document.documentElement.setAttribute('data-dark','');
+  else document.documentElement.removeAttribute('data-dark');
+}
+function toggleAutoLock(el){
+  state.autoLock=!state.autoLock;
+  el.classList.toggle('on',state.autoLock);
+  LS.set('ledger_autolock',state.autoLock);
+  if(state.autoLock)setupAutoLock();else clearAutoLock();
+}
+function setCurrency(sym){
+  state.currentCurrency=sym;
+  LS.set('ledger_currency',sym);
+  renderSettings();
+}
+
+function openChangePinOverlay(){
+  let overlay=document.getElementById('changePinOverlay');
+  if(!overlay){
+    overlay=document.createElement('div');
+    overlay.id='changePinOverlay';
+    overlay.className='modal-overlay';
+    overlay.innerHTML=`<div class="modal-sheet"><div id="changePinContent"></div></div>`;
+    overlay.addEventListener('click',e=>{if(e.target===overlay)overlay.remove()});
+    document.body.appendChild(overlay);
+  }
+  renderChangePinModal(document.getElementById('changePinContent'));
+  requestAnimationFrame(()=>overlay.classList.add('open'));
+}
+
+async function exportData(fmt){
+  const txns=await dbGetAll('transactions');
+  const savings=await dbGetAll('savings');
+  const bal=await getBalances();
+  if(fmt==='json'){
+    const d=JSON.stringify({transactions:txns,savings,balances:bal},null,2);
+    download('ledger-export.json',d,'application/json');
+  } else {
+    const rows=[['id','type','amount','category','note','source','date','isSavings']];
+    txns.forEach(t=>rows.push([t.id,t.type,t.amount,t.category,t.note||'',t.source,t.date,t.isSavings?'yes':'no']));
+    const csv=rows.map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+    download('ledger-export.csv',csv,'text/csv');
+  }
+  showToast('Export ready');
+}
+function download(name,data,type){
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([data],{type}));
+  a.download=name;a.click();
+}
+
+function confirmClearData(){
+  showConfirm('Clear All Data','This will permanently delete all transactions, savings, and balance data for both profiles. This cannot be undone.',async()=>{
+    await dbClear('transactions');
+    await dbClear('savings');
+    await dbClear('balances');
+    showToast('All data cleared');
+    renderAll();
+  },'Delete Everything');
+}
+
+// ═══════════════════════════════════════════════════════
+// TRANSACTION MODAL
+// ═══════════════════════════════════════════════════════
+let txFormState={type:'expense',source:'online',category:'food',profile:state.activeProfile};
+
+function openTxModal(type='expense',editTx=null){
+  state.editTxId=editTx?editTx.id:null;
+  txFormState={
+    type:editTx?editTx.type:type,
+    source:editTx?editTx.source:'online',
+    category:editTx?editTx.category:'food',
+    profile:editTx?editTx.profile:state.activeProfile,
+  };
+  const title=document.getElementById('txModalTitle');
+  if(title)title.textContent=editTx?'Edit Transaction':(type==='income'?'Add Income':'Add Expense');
+  renderTxForm(editTx);
+  openModal('txModal');
+}
+
+function renderTxForm(editTx=null){
+  const form=document.getElementById('txForm');
+  const cur=state.currentCurrency;
+  const isEditing = !!editTx;
+  form.innerHTML=`
+    <div class="type-toggle">
+      <button class="type-btn expense ${txFormState.type==='expense'?'active':''}" onclick="setTxType('expense')">↓ Expense</button>
+      <button class="type-btn income ${txFormState.type==='income'?'active':''}" onclick="setTxType('income')">↑ Income</button>
+    </div>
+    <div class="form-group">
+      <div class="form-label">Amount</div>
+      <input type="number" inputmode="decimal" placeholder="0.00" class="form-input amount-input" id="txAmount" value="${editTx?editTx.amount:''}" min="0" step="0.01">
+    </div>
+    <div class="form-group">
+      <div class="form-label">Profile</div>
+      <div class="source-toggle">
+        <button class="source-btn ${txFormState.profile==='personal'?'active':''}" onclick="setTxProfile('personal')" ${isEditing?'disabled style="opacity:0.5;cursor:not-allowed"':''}>Personal</button>
+        <button class="source-btn ${txFormState.profile==='managed'?'active':''}" onclick="setTxProfile('managed')" ${isEditing?'disabled style="opacity:0.5;cursor:not-allowed"':''}>Managed</button>
+      </div>
+    </div>
+    <div class="form-group">
+      <div class="form-label">Payment Source</div>
+      <div class="source-toggle">
+        <button class="source-btn ${txFormState.source==='online'?'active':''}" onclick="setTxSource('online')">💳 Online</button>
+        <button class="source-btn ${txFormState.source==='cash'?'active':''}" onclick="setTxSource('cash')">💵 Cash</button>
+      </div>
+    </div>
+    <div class="form-group">
+      <div class="form-label">Category</div>
+      <div class="category-grid">
+        ${CATS.map(c=>`<button class="cat-btn ${txFormState.category===c.id?'active':''}" onclick="setTxCat('${c.id}')"><div class="cat-btn-icon">${c.icon}</div><div class="cat-btn-label">${c.label}</div></button>`).join('')}
+      </div>
+    </div>
+    <div class="form-group">
+      <div class="form-label">Note (optional)</div>
+      <input type="text" placeholder="e.g. Lunch with friends" class="form-input" id="txNote" value="${editTx?editTx.note||'':''}" maxlength="100">
+    </div>
+    <button class="submit-btn" onclick="submitTransaction()">
+      ${editTx?'Save Changes':(txFormState.type==='expense'?'Add Expense':'Add Income')}
+    </button>`;
+  setTimeout(()=>{const inp=document.getElementById('txAmount');if(inp)inp.focus()},350);
+}
+
+function setTxType(t){txFormState.type=t;renderTxForm(state.editTxId?{id:state.editTxId,amount:document.getElementById('txAmount')?.value,note:document.getElementById('txNote')?.value,type:t,source:txFormState.source,category:txFormState.category,profile:txFormState.profile}:null)}
+function setTxProfile(p){txFormState.profile=p;renderTxForm(state.editTxId?{id:state.editTxId,amount:document.getElementById('txAmount')?.value,note:document.getElementById('txNote')?.value,type:txFormState.type,source:txFormState.source,category:txFormState.category,profile:p}:null)}
+function setTxSource(s){txFormState.source=s;const btns=document.querySelectorAll('#txForm .source-btn');btns.forEach(b=>b.classList.toggle('active',b.textContent.toLowerCase().includes(s)))}
+function setTxCat(c){txFormState.category=c;document.querySelectorAll('.cat-btn').forEach(b=>b.classList.toggle('active',b.getAttribute('onclick')?.includes(`'${c}'`)))}
+
+async function submitTransaction(){
+  const amountEl=document.getElementById('txAmount');
+  const noteEl=document.getElementById('txNote');
+  const amount=parseFloat(amountEl?.value||'0');
+  if(!amount||amount<=0){showToast('Enter a valid amount');amountEl?.focus();return;}
+
+  const profile = txFormState.profile || state.activeProfile;
+  const bal=await getBalances(profile);
+  const src=txFormState.source;
+
+  if(state.editTxId){
+    const old=(await dbGetAll('transactions')).find(t=>t.id===state.editTxId);
+    if(old){
+      const oldProfile = old.profile || 'personal';
+      const oldSrc=old.source;
+      if(old.type==='expense')await adjustBalance(oldSrc,old.amount,oldProfile);
+      else await adjustBalance(oldSrc,-old.amount,oldProfile);
+    }
+    if(txFormState.type==='expense'){
+      const avail=src==='online'?bal.online:bal.cash;
+      if(amount>(avail+(old?old.amount:0))+0.001){showToast('Insufficient balance');return;}
+      await adjustBalance(src,-amount,profile);
+    } else {
+      await adjustBalance(src,amount,profile);
+    }
+    await dbPut('transactions',{id:state.editTxId,type:txFormState.type,source:src,category:txFormState.category,amount,note:noteEl?.value||'',date:old?.date||new Date().toISOString(),isSavings:false,profile});
+    showToast('Transaction updated');
+  } else {
+    if(txFormState.type==='expense'){
+      const avail=src==='online'?bal.online:bal.cash;
+      if(amount>avail+0.001){showToast(`Insufficient ${src} balance`);return;}
+      await adjustBalance(src,-amount,profile);
+    } else {
+      await adjustBalance(src,amount,profile);
+    }
+    const id='tx_'+Date.now()+'_'+Math.random().toString(36).substr(2,6);
+    await dbPut('transactions',{id,type:txFormState.type,source:src,category:txFormState.category,amount,note:noteEl?.value||'',date:new Date().toISOString(),isSavings:false,profile});
+    showToast(txFormState.type==='expense'?'Expense added':'Income added');
+  }
+  closeModal('txModal');
+  state.editTxId=null;
+  renderPage(state.activeTab);
+  if(state.activeTab!==0)renderHome();
+}
+
+// ═══════════════════════════════════════════════════════
+// SAVINGS MODAL
+// ═══════════════════════════════════════════════════════
+let savFormState={mode:'add',source:'online'};
+
+function openSavingsModal(mode='add'){
+  savFormState={mode,source:'online'};
+  const title=document.getElementById('savingsModalTitle');
+  if(title)title.textContent=mode==='add'?'Add to Savings':'Withdraw from Savings';
+  renderSavingsForm();
+  openModal('savingsModal');
+}
+
+function renderSavingsForm(){
+  const form=document.getElementById('savingsForm');
+  const isWithdraw=savFormState.mode==='withdraw';
+  form.innerHTML=`
+    <div class="savings-type-toggle">
+      <button class="savings-type-btn ${savFormState.source==='online'?'active':''}" onclick="setSavSource('online')">💳 Online</button>
+      <button class="savings-type-btn ${savFormState.source==='cash'?'active':''}" onclick="setSavSource('cash')">💵 Cash</button>
+    </div>
+    <div class="form-group">
+      <div class="form-label">Amount</div>
+      <input type="number" inputmode="decimal" placeholder="0.00" class="form-input amount-input" id="savAmount" min="0" step="0.01">
+    </div>
+    ${isWithdraw?`<div class="form-group">
+      <div class="form-label">Withdraw to</div>
+      <div class="source-toggle">
+        <button class="source-btn active" id="wdTo_online" onclick="toggleWithdrawTo('online')">💳 Online</button>
+        <button class="source-btn" id="wdTo_cash" onclick="toggleWithdrawTo('cash')">💵 Cash</button>
+      </div>
+    </div>`:''}
+    <div class="form-group">
+      <div class="form-label">Note (optional)</div>
+      <input type="text" placeholder="${isWithdraw?'e.g. Emergency withdrawal':'e.g. Monthly savings'}" class="form-input" id="savNote" maxlength="100">
+    </div>
+    <button class="submit-btn" style="background:${isWithdraw?'var(--accent2)':'var(--accent)'}" onclick="submitSavings()">
+      ${isWithdraw?'Withdraw from Savings':'Add to Savings'}
+    </button>`;
+  setTimeout(()=>{const inp=document.getElementById('savAmount');if(inp)inp.focus()},350);
+}
+
+let withdrawTo='online';
+function toggleWithdrawTo(t){
+  withdrawTo=t;
+  document.querySelectorAll('#savingsForm .source-btn').forEach(b=>b.classList.toggle('active',b.id===`wdTo_${t}`));
+}
+function setSavSource(s){
+  savFormState.source=s;
+  document.querySelectorAll('#savingsForm .savings-type-btn').forEach(b=>b.classList.toggle('active',b.textContent.toLowerCase().includes(s)));
+}
+
+async function submitSavings(){
+  const amountEl=document.getElementById('savAmount');
+  const noteEl=document.getElementById('savNote');
+  const amount=parseFloat(amountEl?.value||'0');
+  if(!amount||amount<=0){showToast('Enter a valid amount');return;}
+
+  const bal=await getBalances('personal');
+  const src=savFormState.source;
+  const isWithdraw=savFormState.mode==='withdraw';
+  const savKey=`savings_${src}`;
+
+  if(isWithdraw){
+    const avail=src==='online'?bal.savings_online:bal.savings_cash;
+    if(amount>avail+0.001){showToast('Insufficient savings');return;}
+    await adjustBalance(savKey,-amount,'personal');
+    await adjustBalance(withdrawTo,amount,'personal');
+    const id='sv_'+Date.now()+'_'+Math.random().toString(36).substr(2,6);
+    await dbPut('transactions',{id,type:'income',source:withdrawTo,category:'other',amount,note:noteEl?.value||'Savings withdrawal',date:new Date().toISOString(),isSavings:true,savingsAction:'withdraw',savingsSource:src,profile:'personal'});
+    showToast('Withdrawn from savings');
+  } else {
+    const avail=src==='online'?bal.online:bal.cash;
+    if(amount>avail+0.001){showToast(`Insufficient ${src} balance`);return;}
+    await adjustBalance(src,-amount,'personal');
+    await adjustBalance(savKey,amount,'personal');
+    const id='sv_'+Date.now()+'_'+Math.random().toString(36).substr(2,6);
+    await dbPut('transactions',{id,type:'expense',source:src,category:'other',amount,note:noteEl?.value||'Added to savings',date:new Date().toISOString(),isSavings:true,savingsAction:'add',savingsSource:src,profile:'personal'});
+    showToast('Added to savings');
+  }
+  closeSavingsModal();
+  renderPage(state.activeTab);
+  if(state.activeTab!==0&&state.activeTab!==2)renderHome();
+}
+function closeSavingsModal(){closeModal('savingsModal')}
+
+// ═══════════════════════════════════════════════════════
+// TX DETAIL
+// ═══════════════════════════════════════════════════════
+async function openTxDetail(id){
+  const txns=await dbGetAll('transactions');
+  const tx=txns.find(t=>t.id===id);
+  if(!tx)return;
+  const cat=catInfo(tx.category);
+  const cur=state.currentCurrency;
+  const isInc=tx.type==='income';
+  const isSav=tx.isSavings;
+  const txProfile = tx.profile || 'personal';
+
+  const content=document.getElementById('txDetailContent');
+  content.innerHTML=`
+    <div style="padding:0 16px 16px">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
+        <div class="tx-icon" style="width:52px;height:52px;font-size:24px;border-radius:14px;background:${isSav?'var(--gold-light)':isInc?'var(--green-light)':'var(--red-light)'}">${cat.icon}</div>
+        <div>
+          <div style="font-size:17px;font-weight:600;color:var(--text)">${tx.note||cat.label}<span class="profile-badge ${txProfile}">${txProfile}</span></div>
+          <div style="font-size:13px;color:var(--text3)">${cat.label}${isSav?' · Savings':''}</div>
+        </div>
+      </div>
+      <div style="font-family:var(--font-display);font-size:36px;color:${isSav?'var(--gold)':isInc?'var(--green)':'var(--red)'};margin-bottom:20px;letter-spacing:-0.5px">
+        ${isInc?'+':'-'}${cur}${fmt(tx.amount)}
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div style="background:var(--bg2);border-radius:var(--radius-sm);padding:12px">
+          <div style="font-size:11px;color:var(--text3);font-weight:500;letter-spacing:0.3px;text-transform:uppercase;margin-bottom:4px">Source</div>
+          <div style="font-size:14px;font-weight:500">${tx.source==='cash'?'💵 Cash':'💳 Online'}</div>
+        </div>
+        <div style="background:var(--bg2);border-radius:var(--radius-sm);padding:12px">
+          <div style="font-size:11px;color:var(--text3);font-weight:500;letter-spacing:0.3px;text-transform:uppercase;margin-bottom:4px">Type</div>
+          <div style="font-size:14px;font-weight:500;text-transform:capitalize">${tx.type}</div>
+        </div>
+      </div>
+      <div style="margin-top:10px;background:var(--bg2);border-radius:var(--radius-sm);padding:12px">
+        <div style="font-size:11px;color:var(--text3);font-weight:500;letter-spacing:0.3px;text-transform:uppercase;margin-bottom:4px">Date & Time</div>
+        <div style="font-size:13px;font-weight:500">${fmtFull(tx.date)}</div>
+      </div>
+    </div>`;
+
+  const actions=document.getElementById('txDetailActions');
+  if(!tx.isSavings){
+    actions.innerHTML=`
+      <button class="ctx-btn" onclick="closeModal('txDetailModal');openTxModal('${tx.type}',${JSON.stringify(tx).replace(/"/g,'&quot;')})">Edit</button>
+      <button class="ctx-btn danger" onclick="deleteTxConfirm('${tx.id}')">Delete</button>`;
+  } else {
+    actions.innerHTML=`<button class="ctx-btn danger" onclick="deleteSavingsTxConfirm('${tx.id}')">Delete Entry</button>`;
+  }
+
+  openModal('txDetailModal');
+}
+
+function deleteTxConfirm(id){
+  closeModal('txDetailModal');
+  showConfirm('Delete Transaction','This transaction will be deleted and the balance will be reversed.',()=>deleteTx(id));
+}
+
+async function deleteTx(id){
+  const txns=await dbGetAll('transactions');
+  const tx=txns.find(t=>t.id===id);
+  if(!tx)return;
+  const txProfile = tx.profile || 'personal';
+  if(tx.type==='expense')await adjustBalance(tx.source,tx.amount,txProfile);
+  else await adjustBalance(tx.source,-tx.amount,txProfile);
+  await dbDelete('transactions',id);
+  showToast('Transaction deleted');
+  renderPage(state.activeTab);
+}
+
+function deleteSavingsTxConfirm(id){
+  closeModal('txDetailModal');
+  showConfirm('Delete Savings Entry','This entry will be removed. Balances will be reversed.',()=>deleteSavingsTx(id));
+}
+
+async function deleteSavingsTx(id){
+  const txns=await dbGetAll('transactions');
+  const tx=txns.find(t=>t.id===id);
+  if(!tx)return;
+  const savKey=`savings_${tx.savingsSource||tx.source}`;
+  if(tx.savingsAction==='add'){
+    await adjustBalance(tx.source,tx.amount,'personal');
+    await adjustBalance(savKey,-tx.amount,'personal');
+  } else if(tx.savingsAction==='withdraw'){
+    await adjustBalance(tx.source,-tx.amount,'personal');
+    await adjustBalance(savKey,tx.amount,'personal');
+  }
+  await dbDelete('transactions',id);
+  showToast('Entry deleted');
+  renderPage(state.activeTab);
+}
+
+// ═══════════════════════════════════════════════════════
+// MODAL HELPERS
+// ═══════════════════════════════════════════════════════
+function openModal(id){
+  const m=document.getElementById(id);
+  if(m)requestAnimationFrame(()=>m.classList.add('open'));
+}
+function closeModal(id){
+  const m=document.getElementById(id);
+  if(m){m.classList.remove('open');}
+}
+
+// Close modals on overlay click
+['txModal','savingsModal','txDetailModal'].forEach(id=>{
+  const el=document.getElementById(id);
+  if(el)el.addEventListener('click',e=>{if(e.target===el)closeModal(id)});
+});
+
+// ═══════════════════════════════════════════════════════
+// CONFIRM DIALOG
+// ═══════════════════════════════════════════════════════
+function showConfirm(title,desc,onOk,okLabel='Delete'){
+  document.getElementById('confirmTitle').textContent=title;
+  document.getElementById('confirmDesc').textContent=desc;
+  document.getElementById('confirmOk').textContent=okLabel;
+  document.getElementById('confirmDialog').classList.add('open');
+  confirmCallback=onOk;
+}
+document.getElementById('confirmOk').addEventListener('click',()=>{
+  document.getElementById('confirmDialog').classList.remove('open');
+  if(confirmCallback)confirmCallback();
+  confirmCallback=null;
+});
+document.getElementById('confirmCancel').addEventListener('click',()=>{
+  document.getElementById('confirmDialog').classList.remove('open');
+  confirmCallback=null;
+});
+
+// ═══════════════════════════════════════════════════════
+// TOAST
+// ═══════════════════════════════════════════════════════
+let toastTimer=null;
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.classList.add('show');
+  if(toastTimer)clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>t.classList.remove('show'),2200);
+}
+
+// ═══════════════════════════════════════════════════════
+// NAV
+// ═══════════════════════════════════════════════════════
+document.querySelectorAll('.nav-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>setTab(parseInt(btn.dataset.tab)));
+});
+
+// ═══════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════
+async function init(){
+  loadSettings();
+  await openDB();
+  updateProfileTheme();
+  renderLockScreen();
+}
+init();
+</script>
+
+
+<script>
+if('serviceWorker' in navigator){
+  const swCode = "const CACHE = 'ledger-v1';\nconst ASSETS = ['/', '/index.html'];\n\nself.addEventListener('install', e => {\n  e.waitUntil(\n    caches.open(CACHE).then(c => c.addAll(ASSETS)).then(() => self.skipWaiting())\n  );\n});\n\nself.addEventListener('activate', e => {\n  e.waitUntil(\n    caches.keys().then(keys =>\n      Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))\n    ).then(() => self.clients.claim())\n  );\n});\n\nself.addEventListener('fetch', e => {\n  if (e.request.method !== 'GET') return;\n  if (!e.request.url.startsWith(self.location.origin)) return;\n  // Google Fonts: network first, fallback to cache\n  if (e.request.url.includes('fonts.googleapis') || e.request.url.includes('fonts.gstatic')) {\n    e.respondWith(\n      fetch(e.request).then(r => {\n        const clone = r.clone();\n        caches.open(CACHE).then(c => c.put(e.request, clone));\n        return r;\n      }).catch(() => caches.match(e.request))\n    );\n    return;\n  }\n  // App shell: cache first\n  e.respondWith(\n    caches.match(e.request).then(cached => {\n      if (cached) return cached;\n      return fetch(e.request).then(r => {\n        if (r.ok) {\n          const clone = r.clone();\n          caches.open(CACHE).then(c => c.put(e.request, clone));\n        }\n        return r;\n      });\n    })\n  );\n});\n";
+  const blob = new Blob([swCode], {type:'application/javascript'});
+  const url = URL.createObjectURL(blob);
+  navigator.serviceWorker.register(url).catch(()=>{});
+}
+</script>
+</body>
+</html>
